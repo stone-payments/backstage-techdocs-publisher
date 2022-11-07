@@ -1,0 +1,58 @@
+name: 'Backstage techDocs Publisher'
+description: 'Offers complete assistance to generate and publish all needed docs resource to any cloud storage available'
+inputs:
+  cloud-storage:
+    description: 'The chosen cloud storage to publish TechDocs content'
+    required: true
+    default: 'awsS3' #awsS3|googleGcs|azureBlobStorage|openStackSwift
+  storage-name:
+    description: 'The bucket or container storage name'
+    required: true
+  gcs-bucket-root-path:
+    description: 'Optional sub-directory to store files in Google cloud storage'
+    required: false
+  azure-account-name:
+    description: '(Required for Azure) specify when storage input azureBlobStorage'
+    required: false
+  azure-account-key:
+    description: 'Azure Storage Account key to use for authentication. If not specified, you must set AZURE_TENANT_ID, AZURE_CLIENT_ID & AZURE_CLIENT_SECRET as environment variables.'
+    required: false
+  aws-role-arn:
+    description: 'Optional AWS ARN of role to be assumed'
+    required: false
+  aws-endpoint:
+    description: 'Optional AWS endpoint to send requests to'
+    required: false
+  awsS3-sse:
+    description: 'Optional AWS S3 Server Side Encryption'
+    required: false
+  awsS3-force-path-style:
+    description: 'Optional AWS S3 option to force path style'
+    required: false
+  os-credential-id:
+    description: '(Required for OpenStack) specify when --publisher-type openStackSwift'
+    required: false
+  os-secret:
+    description: '(Required for OpenStack) specify when --publisher-type openStackSwift'
+    required: false
+  os-auth-url:
+    description: '(Required for OpenStack) specify when --publisher-type openStackSwift'
+    required: false
+  os-swift-url:
+    description: '(Required for OpenStack) specify when --publisher-type openStackSwift'
+    required: false
+  github-token: 
+    description: 'Required if techdocs reference is in external GitHub private url'
+    required: false
+  publish-looking-path:
+    description: 'Pathdir to get all resources to publish'
+    required: false
+  publish-looking-file:
+    description: 'Get entities backstage by catalog file'
+    required: false
+  publish-entities-list:
+    description: 'hard-coded entities list to get and publish'
+    required: false
+runs:
+  using: 'node16'
+  main: 'index.js'

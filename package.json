@@ -1,0 +1,26 @@
+{
+  "name": "techdocs-publisher",
+  "version": "1.0.0",
+  "description": "A GitHub Action that publish all resources pending in backstage repository.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Giomaster/techdocs-publisher.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Giomaster/techdocs-publisher/issues"
+  },
+  "homepage": "https://github.com/Giomaster/techdocs-publisher#readme",
+  "dependencies": {
+    "@actions/core": "^1.10.0",
+    "@actions/github": "^5.1.1",
+    "js-yaml": "^4.1.0",
+    "node-dir": "^0.1.17"
+  }
+}
