@@ -70,15 +70,17 @@ class Techdocs {
     };
 
     if (entity.techdocsRef.split(':')[0] == 'url') {
-      makeGen.source = `--techdocs-ref ${entity.techdocsRef}`
+      makeGen.source = `--techdocs-ref ${entity.techdocsRef}`;
     } else if (entity.techdocsRef.split(':')[0] == 'dir') {
-      makeGen.source = `--source-dir ${entity.techdocsRef}`
+      const onlyTechdocsPath = entity.techdocsRef.split(':').slice(1).join('');
+      const docPath  = path.join(entity.path, onlyTechdocsPath);
+      makeGen.source = `--source-dir ${docPath}`;
     } else {
-      throw new Error('unsupported techdocs reference annotation type')
+      throw new Error('unsupported techdocs reference annotation type');
     }
 
     exec.execSync(`${makeGen.cmd} ${makeGen.source} --no-docker`, (error, _, _) => {
-      throw error
+      throw error;
     });
   }
 
@@ -99,7 +101,7 @@ class Techdocs {
     }
 
     exec.execSync(`${makePublish.cmd} ${makePublish.type} ${makePublish.storageName} ${makePublish.entity} ${makePublish.options}`, (error, _, _) => {
-      throw error
+      throw error;
     });
   }
 }
@@ -107,7 +109,23 @@ class Techdocs {
 class Entities extends Techdocs {
   constructor() {
     super();
-    this.githubWorkspace  = process.env.GITHUB_WORKSPACE
+    this.githubWorkspace  = process.env.GITHUB_WORKSPACE;
+  }
+
+  validateEntity(entity) {
+    const techdocs  = entity.metadata?.annotations['backstage.io/techdocs-ref'];
+    const name      = entity.metadata?.name;
+    const namespace = entity.metadata?.namespace;
+    const kind      = entity.kind;
+
+    const validateFields = [techdocs, name, namespace, kind];
+    for (const fields in validateFields) {
+      if (typeof fields === 'undefined') {
+        return false
+      }
+    }
+
+    return true
   }
 
   getInfo(filepath) {
@@ -116,51 +134,95 @@ class Entities extends Techdocs {
       return
     }
 
-    const entity    = yaml.load(fs.readFileSync(filepath, 'utf-8'));
-    const techdocs  = entity.metadata.annotations['backstage.io/techdocs-ref'];
-    const name      = entity.metadata.name;
-    const namespace = entity.metadata.namespace;
-    const kind      = entity.kind;
-
-    const validateFields = [techdocs, name, namespace, kind];
-    for (const fields in validateFields) {
-      if (typeof fields === 'undefined') {
-        console.log(`Ignoring ${filepath}: necessary fields is missing.`);
-        return
-      }
+    const entity = yaml.load(fs.readFileSync(filepath, 'utf-8'));
+    if (!this.validateEntity(entity)) {
+      return {error: true}
     }
 
-    return {name: name, namespace: namespace, kind: kind, techdocsRef: techdocs};
+    return {
+      name: entity.metadata.name,
+      namespace: entity.metadata.namespace,
+      kind: entity.kind, 
+      techdocsRef: entity.metadata.annotations['backstage.io/techdocs-ref'],
+      path: path.dirname(filepath)
+    };
+  }
+
+  getEntitiesByFile(catalogPath) {
+    let entityList = [catalogPath];
+
+    if (!(path.extname(catalogPath) in ['yml', 'yaml'])) {
+      throw new Error(`${catalogPath} file isn't a valid catalog file`);
+    }
+
+    const catalogData = yaml.load(fs.readFileSync(catalogPath, 'utf-8'));
+    if (!this.validateEntity(entity)) {
+      return false
+    }
+
+    if (catalogData.kind == 'Location') {
+      const catalogDir = path.dirname(catalogPath);
+      catalogData.spec?.targets.forEach(target => {
+        entityList.push(path.join(catalogDir, target));
+      });
+    }
+
+    return entityList
+  }
+
+  publishEntities(entities, isErr) {
+    for (let i = 0; i < entities.length; i++) {
+      let entity = this.getInfo(entities[i]);
+      if (entity.error) {
+        if (isErr) {
+          throw new Error(`error in ${entities[i]}: necessary fields is missing`);
+        } else {
+          console.log(`Ignoring ${files[i]}: necessary fields is missing`);
+          continue;
+        }
+      }
+
+      this.generate(entity);
+      this.publish(entity);
+    }
   }
 
   publishLookingPath() {
-    const root = path.join(this.githubWorkspace, core.getInput('path'));
+    const root = path.join(this.githubWorkspace, core.getInput('publish-looking-path'));
 
     dir.files(root, (err, files) => {
       if (err) throw err
-      files.forEach((filepath) => {
-        let entity = this.getInfo(filepath);
-        this.generate(entity);
-        this.publish(entity);
-      });
+      this.publishEntities(files, false);
     });
   }
 
-  publishLookingFile
+  publishLookingFile() {
+    const catalog = path.join(this.githubWorkspace, core.getInput('publish-looking-file'));
+    const entities = this.getEntitiesByFile(catalog);
 
+    if (!entities) {
+      throw new Error('error to get entities: bad catalog format');
+    }
 
+    this.publishEntities(entities, true);
+  }
 }
 
 try {
-  const storage = core.getInput('cloud-storage');
-  const azureAccountName = core.getInput('azure-account-name');
-
-  const validate = validateStorage(storage, azureAccountName);
+  const validate = Techdocs.validateCloudStorage();
   if (validate.err) {
     throw new Error(validate.msg);
   }
 
-
+  if (core.getInput('publish-looking-path').length() > 0) {
+    Entities.publishLookingPath();
+  } else if (core.getInput('publish-looking-file').length() > 0) {
+    Entities.publishLookingFile();
+  } else if (core.getMultilineInput('publish-entities-list').length() > 0) {
+    Entities.publishEntities(core.getMultilineInput('publish-entities-list'), true);
+  } else {
+    throw new Error('error no publication type was specified');
+  }
 } catch(error) {
   core.setFailed(error.message)
 }

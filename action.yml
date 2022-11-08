@@ -41,9 +41,6 @@ inputs:
   os-swift-url:
     description: '(Required for OpenStack) specify when --publisher-type openStackSwift'
     required: false
-  github-token: 
-    description: 'Required if techdocs reference is in external GitHub private url'
-    required: false
   publish-looking-path:
     description: 'Pathdir to get all resources to publish'
     required: false
