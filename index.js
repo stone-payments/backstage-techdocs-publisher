@@ -1,5 +1,5 @@
-import core from '@actions/core';
-import {Entities} from './action';
+const core = require('@actions/core');
+const Entities = require('./action');
 
 try {
   const entities = new Entities(core);
@@ -8,11 +8,11 @@ try {
     throw new Error(validate.msg);
   }
 
-  if (core.getInput('publish-looking-path').length() > 0) {
+  if (core.getInput('publish-looking-path').length > 0) {
     entities.publishLookingPath();
-  } else if (core.getInput('publish-looking-file').length() > 0) {
+  } else if (core.getInput('publish-looking-file').length > 0) {
     entities.publishLookingFile();
-  } else if (core.getMultilineInput('publish-entities-list').length() > 0) {
+  } else if (core.getMultilineInput('publish-entities-list').length > 0) {
     entities.publishEntities(
         core.getMultilineInput('publish-entities-list'),
         true,

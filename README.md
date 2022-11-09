@@ -105,4 +105,5 @@ uses: actions/backstage-techdocs-publisher@v1
 with:
   cloud-storage: googleGcs
   storage-name: '${{ secrets.TECHDOCS_GCS_BUCKET_NAME }}'
+  publish-looking-file: somepath/catalog.yml
 ```

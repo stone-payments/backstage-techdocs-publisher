@@ -1,8 +1,8 @@
-import process from 'node:process';
-import path from 'node:path';
-import fs from 'fs';
-import yaml from 'js-yaml';
-import dir from 'node-dir';
+const fs = require('fs');
+const process = require('process');
+const path = require('path');
+const yaml = require('js-yaml');
+const dir = require('node-dir');
 
 /**
  * @typedef { Object } Entity
@@ -17,14 +17,14 @@ import dir from 'node-dir';
  * Deal with Backstage Techdocs steps, giving assistance
  * to generate and publish entities
  */
-export class Techdocs {
+class Techdocs {
   /**
    * This constructor focus to be compliance with Techdocs-cli
    * flags and arguments
-   *
    * @param { NodeModule } core
    */
   constructor(core) {
+    this.core = core;
     this.cloudStorage = core.getInput('cloud-storage');
     this.storageName = core.getInput('storage-name');
     this.options = {
@@ -109,7 +109,8 @@ export class Techdocs {
    * Generates docs to be publish
    *
    * @param { Entity } entity
-   *
+   * @return { String }
+   * Path directory that docs was generated
    */
   generate(entity) {
     const techdocsGen =
@@ -135,6 +136,7 @@ export class Techdocs {
     }
 
     techdocsGen.default(opts);
+    return opts.sourceDir;
   }
 
   /**
@@ -142,8 +144,9 @@ export class Techdocs {
    *
    * @param { Entity } entity
    *
+   * @param { String } docsDir
    */
-  publish(entity) {
+  publish(entity, docsDir) {
     const techdocsPublish =
     require('@techdocs/cli/dist/cjs/publish-af5607e2.cjs.js');
 
@@ -152,13 +155,13 @@ export class Techdocs {
       storageName: this.storageName,
       publisherType: this.cloudStorage,
       entity: `${entity.namespace}/${entity.kind}/${entity.name}`,
-      directory: './site/',
+      directory: docsDir,
       legacyUseCaseSensitiveTripletPaths: false,
     };
 
     const optionsAvailable = this.options[this.cloudStorage];
     for (const key in optionsAvailable) {
-      if (optionsAvailable[key].length() > 0) {
+      if (optionsAvailable[key].length > 0) {
         opts[key] = optionsAvailable[key];
       }
     }
@@ -171,10 +174,9 @@ export class Techdocs {
 /**
  * Manipulates and extract entities with different ways
  */
-export class Entities extends Techdocs {
+class Entities extends Techdocs {
   /**
    * This constructor builds necessary variables
-   *
    * @param { NodeModule } core
    */
   constructor(core) {
@@ -213,31 +215,37 @@ export class Entities extends Techdocs {
    * The file path that entity is location
    *
    * @return { Object }
-   * Returns entity object if no errors occurs, otherwise
-   * an object response will be returned.
+   * Returns array of entity object if no errors occurs, otherwise
+   * an error object response will be returned.
    */
   getInfo(filepath) {
+    const entityList = [];
     if (!(['.yml', '.yaml'].includes(path.extname(filepath)))) {
       return {error: true, msg: `${filepath}: file isn't a yaml type`};
     }
 
-    const entity = yaml.load(fs.readFileSync(filepath, 'utf-8'));
+    const entities = yaml.loadAll(fs.readFileSync(filepath, 'utf-8'));
 
-    const namespace =
-    (typeof entity.metadata?.namespace === 'undefined') ?
-    'default' : entity.metadata.namespace;
+    for (let i = 0; i < entities.length; i++) {
+      const entity = entities[i];
+      const namespace =
+      (typeof entity.metadata?.namespace === 'undefined') ?
+      'default' : entity.metadata.namespace;
 
-    if (!this.validateEntity(entity)) {
-      return {error: true, msg: `${filepath}: necessary fields is missing`};
+      if (!this.validateEntity(entity)) {
+        return {error: true, msg: `${filepath}: necessary fields is missing`};
+      }
+
+      entityList.push({
+        name: entity.metadata.name,
+        namespace: namespace,
+        kind: entity.kind,
+        techdocsRef: entity.metadata.annotations['backstage.io/techdocs-ref'],
+        path: path.dirname(filepath),
+      });
     }
 
-    return {
-      name: entity.metadata.name,
-      namespace: namespace,
-      kind: entity.kind,
-      techdocsRef: entity.metadata.annotations['backstage.io/techdocs-ref'],
-      path: path.dirname(filepath),
-    };
+    return entityList;
   }
 
   /**
@@ -296,8 +304,8 @@ export class Entities extends Techdocs {
    */
   publishEntities(entities, isErr) {
     for (let i = 0; i < entities.length; i++) {
-      const entity = this.getInfo(entities[i]);
-      if (entity.error) {
+      const entityList = this.getInfo(entities[i]);
+      if (entityList.error) {
         if (isErr) {
           throw new Error(`error in ${entity.msg}`);
         } else {
@@ -306,8 +314,10 @@ export class Entities extends Techdocs {
         }
       }
 
-      this.generate(entity);
-      this.publish(entity);
+      for (let i = 0; i < entityList.length; i++) {
+        const docsPath = this.generate(entityList[i]);
+        this.publish(entityList[i], docsPath);
+      }
     }
   }
 
@@ -316,7 +326,7 @@ export class Entities extends Techdocs {
    */
   publishLookingPath() {
     const root =
-    path.join(this.githubWorkspace, core.getInput('publish-looking-path'));
+    path.join(this.githubWorkspace, this.core.getInput('publish-looking-path'));
 
     dir.files(root, (err, files) => {
       if (err) throw err;
@@ -329,7 +339,7 @@ export class Entities extends Techdocs {
    */
   publishLookingFile() {
     const catalog =
-    path.join(this.githubWorkspace, core.getInput('publish-looking-file'));
+    path.join(this.githubWorkspace, this.core.getInput('publish-looking-file'));
     const entities = this.getEntitiesByFile(catalog);
 
     if (entities.error) {
@@ -339,3 +349,5 @@ export class Entities extends Techdocs {
     this.publishEntities(entities, true);
   }
 }
+
+module.exports = Entities;

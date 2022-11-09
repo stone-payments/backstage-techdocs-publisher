@@ -1,13 +1,13 @@
-import {Techdocs, Entities} from './action';
-import fs from 'fs';
-import yaml from 'js-yaml';
+const Entities = require('./action');
+const fs = require('fs');
+const yaml = require('js-yaml');
 
 test('Insert unsupported cloud storage', () => {
   const core = {
     getInput: jest.fn().mockReturnValue(''),
   };
 
-  const techdocs = new Techdocs(core);
+  const techdocs = new Entities(core);
   expect(techdocs.validateCloudStorage()).
       toEqual({
         err: true,
@@ -24,7 +24,7 @@ test('Insert azureBlobStorage storage type but ' +
         mockReturnValue(''),
   };
 
-  const techdocs = new Techdocs(core);
+  const techdocs = new Entities(core);
   expect(techdocs.validateCloudStorage()).
       toEqual({
         err: true,
@@ -41,7 +41,7 @@ test('Insert openStackSwift storage type but ' +
         mockReturnValue(''),
   };
 
-  const techdocs = new Techdocs(core);
+  const techdocs = new Entities(core);
   expect(techdocs.validateCloudStorage()).
       toEqual({
         err: true,
@@ -56,7 +56,7 @@ test('Insert openStackSwift storage type ' +
         mockReturnValue('openStackSwift'),
   };
 
-  const techdocs = new Techdocs(core);
+  const techdocs = new Entities(core);
   expect(techdocs.validateCloudStorage()).
       toEqual({
         err: false,
@@ -71,7 +71,7 @@ test('Insert azureBlobStorage storage ' +
         mockReturnValue('azureBlobStorage'),
   };
 
-  const techdocs = new Techdocs(core);
+  const techdocs = new Entities(core);
   expect(techdocs.validateCloudStorage()).
       toEqual({
         err: false,
@@ -173,13 +173,13 @@ test('get entity info with success', () => {
   fs.appendFileSync(filepath, yaml.dump(content), () => {});
 
   expect(entities.getInfo(filepath)).
-      toEqual({
+      toEqual([{
         name: 'test',
         namespace: 'default',
         kind: 'test',
         techdocsRef: 'dir:.',
         path: '.',
-      });
+      }]);
 
   fs.unlinkSync(filepath, () => {});
 });
