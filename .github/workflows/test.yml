@@ -1,0 +1,21 @@
+name: Testing Actions Code
+
+on: push
+
+jobs: 
+  validate-code:
+    runs-on: ubuntu-latest
+
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - uses: actions/setup-node@v2
+
+    - name: Install dependencies
+      run: npm i
+
+    - name: Check Lint
+      run: npm run lint
+
+    - name: Check Unit Tests
+      run: npm run test
