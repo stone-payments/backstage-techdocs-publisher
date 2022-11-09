@@ -113,12 +113,11 @@ export class Entities extends Techdocs {
   validateEntity(entity) {
     const techdocs  = entity.metadata?.annotations['backstage.io/techdocs-ref'];
     const name      = entity.metadata?.name;
-    const namespace = entity.metadata?.namespace;
     const kind      = entity.kind;
 
-    const validateFields = [techdocs, name, namespace, kind];
-    for (const fields in validateFields) {
-      if (typeof fields === 'undefined') {
+    const validateFields = [techdocs, name, kind];
+    for (const field in validateFields) {
+      if (typeof validateFields[field] === 'undefined') {
         return false
       }
     }
@@ -127,19 +126,20 @@ export class Entities extends Techdocs {
   }
 
   getInfo(filepath) {
-    if (!(path.extname(filepath) in ['yml', 'yaml'])) {
-      console.log(`Ignoring ${filepath}: file isn't a yaml type`);
-      return
+    if (!(['.yml', '.yaml'].includes(path.extname(filepath)))) {
+      return {error: true, msg: `${filepath}: file isn't a yaml type`}
     }
 
     const entity = yaml.load(fs.readFileSync(filepath, 'utf-8'));
+    console.log(entity);
+    const namespace = (typeof entity.metadata?.namespace === 'undefined') ? 'default' : entity.metadata.namespace;
     if (!this.validateEntity(entity)) {
-      return {error: true}
+      return {error: true, msg: `${filepath}: necessary fields is missing`}
     }
 
     return {
       name: entity.metadata.name,
-      namespace: entity.metadata.namespace,
+      namespace: namespace,
       kind: entity.kind, 
       techdocsRef: entity.metadata.annotations['backstage.io/techdocs-ref'],
       path: path.dirname(filepath)
@@ -149,20 +149,27 @@ export class Entities extends Techdocs {
   getEntitiesByFile(catalogPath) {
     let entityList = [catalogPath];
 
-    if (!(path.extname(catalogPath) in ['yml', 'yaml'])) {
+    if (!(['.yml', '.yaml'].includes(path.extname(catalogPath)))) {
       throw new Error(`${catalogPath} file isn't a valid catalog file`);
     }
 
     const catalogData = yaml.load(fs.readFileSync(catalogPath, 'utf-8'));
-    if (!this.validateEntity(entity)) {
+    if (!this.validateEntity(catalogData)) {
       return false
     }
 
     if (catalogData.kind == 'Location') {
       const catalogDir = path.dirname(catalogPath);
-      catalogData.spec?.targets.forEach(target => {
-        entityList.push(path.join(catalogDir, target));
-      });
+
+      if (typeof catalogData.spec?.targets !== 'undefined') {
+        for (let i = 0; i < catalogData.spec.targets.length; i++) {
+          entityList.push(path.join(catalogDir, catalogData.spec.targets[i]));
+        }
+      }
+
+      if (typeof catalogData.spec?.target !== 'undefined') {
+        entityList.push(path.join(catalogDir, catalogData.spec.target));
+      }
     }
 
     return entityList
@@ -173,9 +180,9 @@ export class Entities extends Techdocs {
       let entity = this.getInfo(entities[i]);
       if (entity.error) {
         if (isErr) {
-          throw new Error(`error in ${entities[i]}: necessary fields is missing`);
+          throw new Error(`error in ${entity.msg}`);
         } else {
-          console.log(`Ignoring ${files[i]}: necessary fields is missing`);
+          console.log(`Ignoring ${entity.msg}`);
           continue;
         }
       }
