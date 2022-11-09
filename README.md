@@ -64,10 +64,6 @@ Pathdir to get all entities to publish.
 
 Get entities backstage by main catalog file.
 
-### `publish-entities-list`
-
-Insert hard-coded entities list to publish.
-
 ## Environment variables
 
 ### GOOGLE_APPLICATION_CREDENTIALS

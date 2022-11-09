@@ -46,9 +46,6 @@ inputs:
   publish-looking-file:
     description: 'Get entities backstage by main catalog file.'
     required: false
-  publish-entities-list:
-    description: 'hard-coded entities list to publish'
-    required: false
 runs:
   using: 'node16'
   main: 'index.js'
