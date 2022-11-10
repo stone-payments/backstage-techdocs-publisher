@@ -97,7 +97,7 @@ Get entities backstage by main catalog file.
 ## Example usage
 
 ```yaml
-uses: actions/backstage-techdocs-publisher@v1
+uses: stone-payments/backstage-techdocs-publisher@v1
 with:
   cloud-storage: googleGcs
   storage-name: '${{ secrets.TECHDOCS_GCS_BUCKET_NAME }}'
