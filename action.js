@@ -209,6 +209,37 @@ class Entities extends Techdocs {
   }
 
   /**
+   * Get entities child of an entity kind Location
+   *
+   * @param { String } fileData
+   * Entity data from file
+   *
+   * @param { String } filePath
+   * File path that entity is located
+   *
+   * @return { Array<String> }
+   * A list of entity childs
+   */
+  insertEntitiesIfKindLocation(fileData, filePath) {
+    const appendEntityList = [];
+    if (fileData.kind == 'Location') {
+      const fileDir = path.dirname(filePath);
+
+      if (typeof fileData.spec?.targets !== 'undefined') {
+        for (let i = 0; i < fileData.spec.targets.length; i++) {
+          appendEntityList.push(path.join(fileDir, fileData.spec.targets[i]));
+        }
+      }
+
+      if (typeof fileData.spec?.target !== 'undefined') {
+        appendEntityList.push(path.join(fileDir, fileData.spec.target));
+      }
+    }
+
+    return appendEntityList;
+  }
+
+  /**
    * Extract unit Backstage entity data
    *
    * @param { String } filepath
@@ -220,29 +251,40 @@ class Entities extends Techdocs {
    */
   getInfo(filepath) {
     const entityList = [];
+    const filePaths = [filepath];
     if (!(['.yml', '.yaml'].includes(path.extname(filepath)))) {
       return {error: true, msg: `${filepath}: file isn't a yaml type`};
     }
 
-    const entities = yaml.loadAll(fs.readFileSync(filepath, 'utf-8'));
+    for (let i = 0; i < filePaths.length; i++) {
+      const entityPath = filePaths[i];
+      const entities = yaml.loadAll(fs.readFileSync(entityPath, 'utf-8'));
 
-    for (let i = 0; i < entities.length; i++) {
-      const entity = entities[i];
-      const namespace =
-      (typeof entity.metadata?.namespace === 'undefined') ?
-      'default' : entity.metadata.namespace;
+      for (let i = 0; i < entities.length; i++) {
+        const entity = entities[i];
+        const namespace =
+        (typeof entity.metadata?.namespace === 'undefined') ?
+        'default' : entity.metadata.namespace;
 
-      if (!this.validateEntity(entity)) {
-        return {error: true, msg: `${filepath}: necessary fields is missing`};
+        if (!this.validateEntity(entity)) {
+          return {
+            error: true,
+            msg: `${entityPath}: necessary fields is missing`,
+          };
+        }
+
+        entityList.push({
+          name: entity.metadata.name,
+          namespace: namespace,
+          kind: entity.kind,
+          techdocsRef: entity.metadata.annotations['backstage.io/techdocs-ref'],
+          path: path.dirname(entityPath),
+        });
+
+        const locatedEntities =
+        this.insertEntitiesIfKindLocation(entity, entityPath);
+        filePaths.push(...locatedEntities);
       }
-
-      entityList.push({
-        name: entity.metadata.name,
-        namespace: namespace,
-        kind: entity.kind,
-        techdocsRef: entity.metadata.annotations['backstage.io/techdocs-ref'],
-        path: path.dirname(filepath),
-      });
     }
 
     return entityList;
@@ -276,19 +318,9 @@ class Entities extends Techdocs {
       };
     }
 
-    if (catalogData.kind == 'Location') {
-      const catalogDir = path.dirname(catalogPath);
-
-      if (typeof catalogData.spec?.targets !== 'undefined') {
-        for (let i = 0; i < catalogData.spec.targets.length; i++) {
-          entityList.push(path.join(catalogDir, catalogData.spec.targets[i]));
-        }
-      }
-
-      if (typeof catalogData.spec?.target !== 'undefined') {
-        entityList.push(path.join(catalogDir, catalogData.spec.target));
-      }
-    }
+    const locatedEntities =
+    this.insertEntitiesIfKindLocation(catalogData, catalogPath);
+    entityList.push(...locatedEntities);
 
     return entityList;
   }
