@@ -112,12 +112,12 @@ class Techdocs {
    * @return { String }
    * Path directory that docs was generated
    */
-  generate(entity) {
+  async generate(entity) {
     const techdocsGen =
     require('@techdocs/cli/dist/cjs/generate-103520bb.cjs.js');
 
     const opts = {
-      verbose: false,
+      verbose: true,
       sourceDir: '.',
       outputDir: './site/',
       omitTechdocsCoreMkdocsPlugin: false,
@@ -135,7 +135,7 @@ class Techdocs {
       throw new Error('unsupported techdocs reference annotation type');
     }
 
-    techdocsGen.default(opts);
+    await techdocsGen.default(opts);
     return opts.outputDir;
   }
 
@@ -151,7 +151,7 @@ class Techdocs {
     require('@techdocs/cli/dist/cjs/publish-af5607e2.cjs.js');
 
     const opts = {
-      verbose: false,
+      verbose: true,
       storageName: this.storageName,
       publisherType: this.cloudStorage,
       entity: `${entity.namespace}/${entity.kind}/${entity.name}`,
@@ -334,7 +334,7 @@ class Entities extends Techdocs {
    * @param { Boolean } isErr
    * Choice if want to treat error as failure
    */
-  publishEntities(entities, isErr) {
+  async publishEntities(entities, isErr) {
     for (let i = 0; i < entities.length; i++) {
       const entityList = this.getInfo(entities[i]);
       if (entityList.error) {
@@ -347,7 +347,7 @@ class Entities extends Techdocs {
       }
 
       for (let i = 0; i < entityList.length; i++) {
-        const docsPath = this.generate(entityList[i]);
+        const docsPath = await this.generate(entityList[i]);
         this.publish(entityList[i], docsPath);
       }
     }
@@ -356,20 +356,20 @@ class Entities extends Techdocs {
   /**
    * Extract entities by walking desired dir and publish them all
    */
-  publishLookingPath() {
+  async publishLookingPath() {
     const root =
     path.join(this.githubWorkspace, this.core.getInput('publish-looking-path'));
 
-    dir.files(root, (err, files) => {
+    await dir.files(root, async (err, files) => {
       if (err) throw err;
-      this.publishEntities(files, false);
+        await this.publishEntities(files, false);
     });
   }
 
   /**
    * Extract entities by catalog file and publish them all
    */
-  publishLookingFile() {
+  async publishLookingFile() {
     const catalog =
     path.join(this.githubWorkspace, this.core.getInput('publish-looking-file'));
     const entities = this.getEntitiesByFile(catalog);
@@ -378,7 +378,7 @@ class Entities extends Techdocs {
       throw new Error(entities.msg);
     }
 
-    this.publishEntities(entities, true);
+    await this.publishEntities(entities, true);
   }
 }
 
