@@ -117,7 +117,7 @@ class Techdocs {
     require('@techdocs/cli/dist/cjs/generate-103520bb.cjs.js');
 
     const opts = {
-      verbose: true,
+      verbose: false,
       sourceDir: '.',
       outputDir: './site/',
       omitTechdocsCoreMkdocsPlugin: false,
@@ -151,7 +151,7 @@ class Techdocs {
     require('@techdocs/cli/dist/cjs/publish-af5607e2.cjs.js');
 
     const opts = {
-      verbose: true,
+      verbose: false,
       storageName: this.storageName,
       publisherType: this.cloudStorage,
       entity: `${entity.namespace}/${entity.kind}/${entity.name}`,
