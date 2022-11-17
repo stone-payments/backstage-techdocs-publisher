@@ -146,7 +146,7 @@ class Techdocs {
    *
    * @param { String } docsDir
    */
-  publish(entity, docsDir) {
+  async publish(entity, docsDir) {
     const techdocsPublish =
     require('@techdocs/cli/dist/cjs/publish-af5607e2.cjs.js');
 
@@ -166,7 +166,7 @@ class Techdocs {
       }
     }
 
-    techdocsPublish.default(opts);
+    await techdocsPublish.default(opts);
   }
 }
 
@@ -348,7 +348,7 @@ class Entities extends Techdocs {
 
       for (let i = 0; i < entityList.length; i++) {
         const docsPath = await this.generate(entityList[i]);
-        this.publish(entityList[i], docsPath);
+        await this.publish(entityList[i], docsPath);
       }
     }
   }
