@@ -136,7 +136,7 @@ class Techdocs {
     }
 
     techdocsGen.default(opts);
-    return opts.sourceDir;
+    return opts.outputDir;
   }
 
   /**
