@@ -9,9 +9,13 @@ try {
   }
 
   if (core.getInput('publish-looking-path').length > 0) {
-    await entities.publishLookingPath();
+    entities.publishLookingPath().then(()=> { 
+      console.log("Finished")
+    });
   } else if (core.getInput('publish-looking-file').length > 0) {
-    await entities.publishLookingFile();
+    await entities.publishLookingFile().then(()=> { 
+      console.log("Finished")
+    });
   } else {
     throw new Error('error no publication type was specified');
   }
