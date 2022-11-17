@@ -339,9 +339,9 @@ class Entities extends Techdocs {
       const entityList = this.getInfo(entities[i]);
       if (entityList.error) {
         if (isErr) {
-          throw new Error(`error in ${entity.msg}`);
+          throw new Error(`error in ${entityList.msg}`);
         } else {
-          console.log(`Ignoring ${entity.msg}`);
+          console.log(`Ignoring ${entityList.msg}`);
           continue;
         }
       }
