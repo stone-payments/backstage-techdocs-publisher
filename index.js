@@ -13,7 +13,7 @@ try {
       console.log("Finished")
     });
   } else if (core.getInput('publish-looking-file').length > 0) {
-    await entities.publishLookingFile().then(()=> { 
+    entities.publishLookingFile().then(()=> { 
       console.log("Finished")
     });
   } else {
