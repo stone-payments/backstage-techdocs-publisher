@@ -1,6 +1,6 @@
 # backstage-techdocs-publisher
 
-A GitHub Action that generates expected docs and publish one or more entities to desired cloud storage.
+A GitHub Action that generates expected docs and publish one or more entities to desired cloud storage. More details see [here](https://backstage.io/docs/features/techdocs/using-cloud-storage).
 
 ## Inputs
 
