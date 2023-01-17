@@ -1,0 +1,18 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: backstage-techdocs-publisher
+  title: Backstage TechDocs Publisher GitHub Action
+  description: A GitHub Action that generates expected docs and publish one or more entities to desired cloud storage.
+  namespace: stone-payments
+  annotations:
+    github.com/project-slug: stone-payments/backstage-techdocs-publisher
+  links:
+    - url: https://docs.platform.buy4.io/backstage/techdocs/#o-workflow-de-build-e-publicacao-da-documentacao
+      title: Site de Documentação
+      icon: docs
+spec:
+  type: library
+  lifecycle: experimental
+  owner: sre-platform
+  subcomponentOf: component:workflow-backstage-techdocs-publisher
